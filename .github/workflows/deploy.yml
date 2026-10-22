@@ -1,0 +1,42 @@
+name: Deploy Flutter Web
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Instalar o Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Criar o projeto Flutter base (só web)
+        run: flutter create --platforms web --project-name portfolio app
+
+      - name: Colocar o main.dart e o pacote url_launcher
+        run: |
+          cp main.dart app/lib/main.dart
+          cd app
+          flutter pub add url_launcher
+
+      - name: Gerar o build
+        run: |
+          cd app
+          flutter build web --base-href /portfolio/ --release
+
+      - name: Publicar na branch gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./app/build/web
+          publish_branch: gh-pages
